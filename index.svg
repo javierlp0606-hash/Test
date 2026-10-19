@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <title>Moplite v4</title>
+  <rect width="100%" height="100%" fill="#07070a"/>
+  <text x="50%" y="48.5%" fill="#33333f" font-family="system-ui,sans-serif"
+        font-size="14" text-anchor="middle" letter-spacing="4">MOPLITE</text>
+  <text x="50%" y="53%" fill="#22222c" font-family="system-ui,sans-serif"
+        font-size="10" text-anchor="middle" letter-spacing="5">BOOTING</text>
+
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml"
+         style="width:100%;height:100%;margin:0;padding:0;overflow:hidden">
+      <iframe id="mp" src="about:blank" title="Moplite v4"
+        allow="autoplay;fullscreen;clipboard-write;encrypted-media;picture-in-picture;gamepad"
+        allowfullscreen="allowfullscreen" referrerpolicy="origin-when-cross-origin"
+        style="width:100%;height:100%;border:0;display:block;background:#07070a"></iframe>
+    </div>
+  </foreignObject>
+
+  <script type="text/javascript"><![CDATA[
+  (function () {
+    var f = document.getElementById('mp');
+    var base = location.href.replace(/[#?][\s\S]*$/, '').replace(/[^\/]*$/, '');
+    var pending = location.hash;
+
+    function fail(msg) {
+      f.setAttribute('srcdoc',
+        '<!doctype html><meta charset="utf-8"><body style="margin:0;height:100vh;display:grid;' +
+        'place-content:center;text-align:center;background:#07070a;color:#e9e9ef;' +
+        'font:15px/1.6 system-ui,sans-serif"><div>' +
+        '<div style="font-size:26px;font-weight:700;letter-spacing:-.03em">Moplite ' +
+        '<span style="color:#ff6a3d">v4</span></div>' +
+        '<p style="color:#8e8e9d;max-width:36ch;margin:10px auto 0">' + msg + '</p>' +
+        '<p style="color:#5b5b6a;font-size:12px;font-family:monospace">open index.html directly instead</p>' +
+        '</div>');
+    }
+
+    function sync() {
+      try {
+        var w = f.contentWindow, d = w.document;
+        if (d.URL === 'about:blank') return;
+        if (pending && d.location.hash !== pending) d.location.hash = pending;
+        pending = '';
+        w.addEventListener('hashchange', function () {
+          try { history.replaceState(null, '', d.location.hash || '#/'); } catch (e) {}
+        });
+        if (window.MutationObserver) {
+          new MutationObserver(function () {
+            if (d.title && document.title !== d.title) document.title = d.title;
+          }).observe(d.documentElement, { childList: true, subtree: true, characterData: true });
+        }
+        if (d.title) document.title = d.title;
+      } catch (e) {}
+    }
+
+    f.addEventListener('load', sync);
+
+    addEventListener('hashchange', function () {
+      try {
+        var w = f.contentWindow;
+        if (w && w.location.hash !== location.hash) w.location.hash = location.hash;
+      } catch (e) {}
+    });
+
+    try {
+      fetch(base + 'index.html', { cache: 'no-cache', credentials: 'omit' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('index.html returned HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function (h) {
+          if (!/<base\s/i.test(h)) h = h.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '">');
+          f.src = URL.createObjectURL(new Blob([h], { type: 'text/html' }));
+        })
+        .catch(function (e) { fail(e.message); });
+    } catch (e) { fail(e.message); }
+
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register(base + 'sw.js').catch(function () {});
+    }
+  })();
+  ]]></script>
+</svg>
